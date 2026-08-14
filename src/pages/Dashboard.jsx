@@ -33,19 +33,16 @@ const Dashboard = () => {
         navigate('/login');
     };
 
-    // VİDEO SİLME FONKSİYONU
     const handleDelete = async (videoId) => {
         if (!window.confirm('Bu videoyu silmek istediğinize emin misiniz?')) return;
 
         try {
             await api.delete(`/videos/${videoId}`);
-            // Silinen videoyu ekrandaki listeden de anında çıkar
-            setVideos(videos.filter(v => v.id !== videoId));
+            setVideos((currentVideos) => currentVideos.filter((v) => v.id !== videoId));
         } catch (err) {
             alert('Video silinirken hata oluştu.');
         }
     };
-
 
     const handleDownload = async (videoId, title) => {
         try {
@@ -65,109 +62,90 @@ const Dashboard = () => {
         }
     };
 
-    if (loading) return <div style={{ padding: '50px', textAlign: 'center', fontFamily: 'sans-serif' }}>Videolar yükleniyor...</div>;
+    const getStatusClass = (status) => {
+        if (status === 'COMPLETED') return 'status-completed';
+        if (status === 'FAILED') return 'status-failed';
+        return 'status-pending';
+    };
+
+    if (loading) {
+        return (
+            <div className="dashboard-page">
+                <div className="dashboard-shell" style={{ maxWidth: '700px', textAlign: 'center', color: 'rgba(255,255,255,0.8)' }}>
+                    Videolar yükleniyor...
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
-            <div style={{ maxWidth: '900px', margin: '0 auto', backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '2px solid #f8f9fa', paddingBottom: '20px' }}>
-                    <h2 style={{ color: '#2c3e50', margin: 0 }}>Veyzo - Videolarım</h2>
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                        <button
-                            onClick={() => navigate('/upload')}
-                            style={{ padding: '10px 18px', backgroundColor: '#198754', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
+        <div className="dashboard-page">
+            <div className="dashboard-shell">
+                <div className="dashboard-header">
+                    <h2 className="dashboard-title">Videolarım</h2>
+                    <div className="toolbar">
+                        <button className="primary-button" onClick={() => navigate('/upload')}>
                             + Yeni Yükle
                         </button>
-                        <button
-                            onClick={handleLogout}
-                            style={{ padding: '10px 18px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
+                        <button className="secondary-button" onClick={handleLogout}>
                             Çıkış Yap
                         </button>
                     </div>
                 </div>
 
-                {error && <div style={{ color: '#721c24', backgroundColor: '#f8d7da', padding: '12px', borderRadius: '6px', marginBottom: '20px' }}>{error}</div>}
+                {error && <div className="alert" style={{ marginTop: '0', marginBottom: '20px' }}>{error}</div>}
 
                 {videos.length === 0 && !error ? (
-                    <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#f8f9fa', borderRadius: '8px', color: '#6c757d' }}>
-                        <h3 style={{ margin: '0 0 10px 0' }}>Burası biraz boş</h3>
-                        <p style={{ margin: 0 }}>Yukarıdaki butona tıklayarak ilk videonuzu kesmeye başlayın.</p>
+                    <div className="empty-state">
+                        <h3>Burası biraz boş</h3>
+                        <p>Yukarıdaki butona tıklayarak ilk videonuzu kesmeye başlayın.</p>
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead>
-                                <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                                    <th style={{ padding: '15px', color: '#495057' }}>Video Başlığı</th>
-                                    <th style={{ padding: '15px', color: '#495057' }}>Durum</th>
-                                    <th style={{ padding: '15px', color: '#495057' }}>Tarih</th>
-                                    <th style={{ padding: '15px', color: '#495057', textAlign: 'right' }}>İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {videos.map((video) => (
-                                    <tr key={video.id} style={{ borderBottom: '1px solid #e9ecef', transition: 'background-color 0.2s' }}>
-                                        <td style={{ padding: '15px', fontWeight: '500', color: '#212529' }}>{video.title}</td>
-                                        <td style={{ padding: '15px' }}>
-                                            <span style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '20px',
-                                                fontSize: '12px',
-                                                fontWeight: 'bold',
-                                                backgroundColor: video.status === 'COMPLETED' ? '#d1e7dd' : video.status === 'FAILED' ? '#f8d7da' : '#fff3cd',
-                                                color: video.status === 'COMPLETED' ? '#0f5132' : video.status === 'FAILED' ? '#842029' : '#664d03'
-                                            }}>
-                                                {video.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '15px', color: '#6c757d', fontSize: '14px' }}>
-                                            {new Date(video.createdAt).toLocaleDateString('tr-TR')}
-                                        </td>
-
-                                        {/* İŞLEM BUTONLARI */}
-                                        <td style={{ padding: '15px', textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                                <button
-                                                    onClick={() => handleDownload(video.id, video.title)}
-                                                    disabled={video.status !== 'COMPLETED'}
-                                                    style={{
-                                                        padding: '8px 12px',
-                                                        backgroundColor: video.status === 'COMPLETED' ? '#0d6efd' : '#e9ecef',
-                                                        color: video.status === 'COMPLETED' ? 'white' : '#6c757d',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        cursor: video.status === 'COMPLETED' ? 'pointer' : 'not-allowed',
-                                                        fontWeight: 'bold',
-                                                        fontSize: '13px'
-                                                    }}
-                                                >
-                                                    İndir
-                                                </button>
-
-                                                <button
-                                                    onClick={() => handleDelete(video.id)}
-                                                    style={{
-                                                        padding: '8px 12px',
-                                                        backgroundColor: 'white',
-                                                        color: '#dc3545',
-                                                        border: '1px solid #dc3545',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: 'bold',
-                                                        fontSize: '13px'
-                                                    }}
-                                                >
-                                                    Sil
-                                                </button>
-                                            </div>
-                                        </td>
+                    <div className="dashboard-body">
+                        <div className="table-card">
+                            <table className="video-table">
+                                <thead>
+                                    <tr>
+                                        <th>Video Başlığı</th>
+                                        <th>Durum</th>
+                                        <th>Tarih</th>
+                                        <th style={{ textAlign: 'right' }}>İşlemler</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {videos.map((video) => (
+                                        <tr key={video.id}>
+                                            <td className="video-title">{video.title}</td>
+                                            <td>
+                                                <span className={`status-pill ${getStatusClass(video.status)}`}>
+                                                    {video.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                                {new Date(video.createdAt).toLocaleDateString('tr-TR')}
+                                            </td>
+                                            <td>
+                                                <div className="table-actions">
+                                                    <button
+                                                        className="table-button primary"
+                                                        onClick={() => handleDownload(video.id, video.title)}
+                                                        disabled={video.status !== 'COMPLETED'}
+                                                    >
+                                                        İndir
+                                                    </button>
+                                                    <button
+                                                        className="table-button danger"
+                                                        onClick={() => handleDelete(video.id)}
+                                                    >
+                                                        Sil
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
