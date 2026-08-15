@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 
 const Upload = () => {
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [title, setTitle] = useState('');
     const [videoUrl, setVideoUrl] = useState('');
     const [duration, setDuration] = useState(0);
@@ -12,6 +12,7 @@ const Upload = () => {
     const [endTime, setEndTime] = useState(0);
 
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState('');
     const [error, setError] = useState('');
 
     const videoRef = useRef(null);
@@ -25,10 +26,10 @@ const Upload = () => {
     };
 
     const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            setVideoUrl(URL.createObjectURL(selectedFile));
+        const selectedFiles = Array.from(e.target.files);
+        if (selectedFiles.length > 0) {
+            setFiles(selectedFiles);
+            setVideoUrl(URL.createObjectURL(selectedFiles[0]));
         }
     };
 
@@ -43,14 +44,8 @@ const Upload = () => {
     const handleUpload = async (e) => {
         e.preventDefault();
 
-        if (!file) {
-            setError('Lütfen bir video dosyası seçin.');
-            return;
-        }
-        if (startTime >= endTime) {
-            setError('Başlangıç süresi, bitiş süresinden küçük olmalıdır.');
-            return;
-        }
+        if (files.length === 0) { setError('Lütfen en az bir video dosyası seçin.'); return; }
+        if (startTime >= endTime) { setError('Başlangıç süresi, bitiş süresinden küçük olmalıdır.'); return; }
 
         setError('');
         setLoading(true);
@@ -58,20 +53,27 @@ const Upload = () => {
         const formattedStartTime = formatTime(startTime);
         const calculateDuration = Math.floor(endTime - startTime).toString();
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('title', title);
-        formData.append('startTime', formattedStartTime);
-        formData.append('duration', calculateDuration);
+        const batchId = "batch_" + Date.now().toString();
 
         try {
-            await api.post('/videos/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            for (let i = 0; i < files.length; i++) {
+                setUploadProgress(`Yükleniyor: ${i + 1} / ${files.length}`);
+
+                const formData = new FormData();
+                formData.append('file', files[i]);
+                formData.append('title', files.length > 1 ? `${title} (${i + 1})` : title);
+                formData.append('startTime', formattedStartTime);
+                formData.append('duration', calculateDuration);
+                formData.append('batchId', batchId);
+
+                await api.post('/videos/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            }
             navigate('/dashboard');
         } catch (err) {
             console.error('Yükleme hatası:', err);
-            setError('Video yüklenirken bir hata oluştu.');
+            setError('Videolar yüklenirken bir hata oluştu.');
             setLoading(false);
         }
     };
@@ -92,34 +94,38 @@ const Upload = () => {
                     <div className="section-card">
                         <div className="form-grid">
                             <div className="form-field">
-                                <label className="field-label">Video Başlığı</label>
+                                <label className="field-label">Video Başlığı (Toplu yüklemede otomatik numaralandırılır)</label>
                                 <input
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     required
                                     className="text-input"
-                                    placeholder="Örneğin: Intro Cut"
                                 />
                             </div>
 
                             <div className="form-field">
-                                <label className="field-label">Video Dosyası Seç (.mp4)</label>
+                                <label className="field-label">Video Dosyaları Seç (.mp4)</label>
                                 <input
                                     type="file"
+                                    multiple
                                     accept="video/mp4,video/x-m4v,video/*"
                                     onChange={handleFileChange}
                                     required
                                     className="file-input"
                                 />
+                                {files.length > 1 && (
+                                    <span style={{ color: '#fbbf24', fontSize: '0.85rem', marginTop: '5px' }}>
+                                        {files.length} adet video seçildi. Şablon tümüne uygulanacak.
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {videoUrl && (
                         <div className="section-card preview-panel">
-                            <h4 style={{ color: 'var(--foreground)', fontSize: '1rem' }}>Önizleme ve Kesme</h4>
-
+                            <h4 style={{ color: 'var(--foreground)', fontSize: '1rem', margin: '0' }}>Şablon Önizlemesi</h4>
                             <video
                                 ref={videoRef}
                                 src={videoUrl}
@@ -127,43 +133,22 @@ const Upload = () => {
                                 onLoadedMetadata={handleLoadedMetadata}
                                 className="preview-video"
                             />
-
                             <div className="trim-group">
-                                <label className="range-label">
-                                    Başlangıç: <span className="range-value">{formatTime(startTime)}</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max={duration}
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(Number(e.target.value))}
-                                    className="trim-range"
-                                />
+                                <label className="range-label">Başlangıç: <span className="range-value">{formatTime(startTime)}</span></label>
+                                <input type="range" min="0" max={duration} value={startTime} onChange={(e) => setStartTime(Number(e.target.value))} className="trim-range" />
                             </div>
-
                             <div className="trim-group">
-                                <label className="range-label">
-                                    Bitiş: <span className="range-value">{formatTime(endTime)}</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max={duration}
-                                    value={endTime}
-                                    onChange={(e) => setEndTime(Number(e.target.value))}
-                                    className="trim-range"
-                                />
+                                <label className="range-label">Bitiş: <span className="range-value">{formatTime(endTime)}</span></label>
+                                <input type="range" min="0" max={duration} value={endTime} onChange={(e) => setEndTime(Number(e.target.value))} className="trim-range" />
                             </div>
-
                             <div className="duration-summary">
-                                <strong>Kesilecek Toplam Süre:</strong> {Math.max(0, endTime - startTime)} saniye
+                                Her bir videodan kesilecek net süre: <strong>{Math.max(0, endTime - startTime)} saniye</strong>
                             </div>
                         </div>
                     )}
 
-                    <button type="submit" disabled={loading || !file} className="upload-button">
-                        {loading ? 'Sunucuya Yükleniyor (Bekleyin)...' : 'Videoyu Yükle ve Kes'}
+                    <button type="submit" disabled={loading || files.length === 0} className="upload-button">
+                        {loading ? (uploadProgress || 'Sunucuya Yükleniyor...') : (files.length > 1 ? `${files.length} Videoyu Klasörle ve Yükle` : 'Videoyu Yükle ve Kes')}
                     </button>
                 </form>
             </div>
