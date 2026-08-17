@@ -17,8 +17,11 @@ const Navbar = () => {
 
             <div className="nav-links">
                 <Link to="/dashboard" className="nav-link">Dashboard</Link>
+                <p className="nav-link">Ses Ayrıştırma(Yakında)</p>
+                <p className="nav-link">Video Birleştirme(Yakında)</p>
                 <Link to="/upload" className="nav-link">Toplu Yükle</Link>
                 <Link to="/profile" className="nav-link">Profil</Link>
+
 
                 <button
                     onClick={handleLogout}
