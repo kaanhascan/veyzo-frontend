@@ -54,18 +54,38 @@ const Dashboard = () => {
         }
     };
 
-    const handleDownload = async (videoId, title) => {
+    const handleDownload = async (video) => {
         try {
-            const response = await api.get(`/videos/download/${videoId}`, { responseType: 'blob' });
+            const response = await api.get(`/videos/download/${video.id}`, {
+                responseType: 'blob',
+            });
+
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${title}_veyzo.mp4`);
+
+            let extension = ".mp4";
+
+            if (video.processedFileName && video.processedFileName.includes('.')) {
+                extension = video.processedFileName.substring(video.processedFileName.lastIndexOf('.'));
+            } else if (video.originalFileName && video.originalFileName.includes('.')) {
+                extension = video.originalFileName.substring(video.originalFileName.lastIndexOf('.'));
+            }
+
+            const safeTitle = video.title ? video.title.replace(/[^a-zA-Z0-9]/g, "_") : "veyzo_export";
+            const downloadName = safeTitle + extension;
+
+            console.log("DOSYA ŞU İSİMLE İNDİRİLECEK:", downloadName);
+
+            link.setAttribute('download', downloadName);
             document.body.appendChild(link);
             link.click();
             link.remove();
-        } catch (err) {
-            alert('Video indirilirken hata oluştu.');
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("İndirme sırasında bir hata oluştu:", error);
+            alert("Dosya indirilemedi!");
         }
     };
 
@@ -184,7 +204,7 @@ const Dashboard = () => {
                                                     ) : (
                                                         <button
                                                             className="table-button primary"
-                                                            onClick={() => handleDownload(group.id, group.title)}
+                                                            onClick={() => handleDownload(group.items[0])}
                                                             disabled={group.status !== 'COMPLETED'}
                                                         >
                                                             İndir
