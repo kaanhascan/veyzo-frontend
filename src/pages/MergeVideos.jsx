@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 
@@ -9,6 +9,9 @@ const MergeVideos = () => {
     const [title, setTitle] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef(null);
 
     const navigate = useNavigate();
 
@@ -34,6 +37,31 @@ const MergeVideos = () => {
                 return [...prevSelected, videoId];
             }
         });
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFiles = Array.from(e.dataTransfer.files);
+
+        const videoFiles = droppedFiles.filter(file => file.type.startsWith('video/'));
+
+        if (videoFiles.length > 0) {
+            setNewFiles(prev => [...prev, ...videoFiles]);
+            setError('');
+        } else {
+            setError("Lütfen sadece geçerli video dosyaları sürükleyin.");
+        }
     };
 
     const handleFileChange = (e) => {
@@ -63,7 +91,6 @@ const MergeVideos = () => {
         const formData = new FormData();
         formData.append('title', title);
 
-
         newFiles.forEach(file => {
             formData.append('files', file);
         });
@@ -79,11 +106,9 @@ const MergeVideos = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error("Birleştirme hatası:", err);
-
             const errorMessage = typeof err.response?.data === 'string'
                 ? err.response.data
-                : (err.response?.data?.message || err.response?.data?.error || "Birleştirme işlemi başlatılamadı.");
-
+                : "Birleştirme işlemi başlatılamadı.";
             setError(errorMessage);
             setLoading(false);
         }
@@ -96,11 +121,11 @@ const MergeVideos = () => {
                     <h2 className="upload-title">Videoları Birleştir</h2>
                 </div>
 
-                <p className="muted-text" style={{ marginBottom: '20px', lineHeight: '1.5' }}>
+                <p className="muted-text page-description">
                     İşlemi tamamlanmış eski videolarınızı seçebilir veya bilgisayarınızdan tamamen yeni videolar yükleyerek tek bir dosyada birleştirebilirsiniz.
                 </p>
 
-                {error && <div className="alert" style={{ marginTop: '0', marginBottom: '20px' }}>{error}</div>}
+                {error && <div className="alert alert-top">{error}</div>}
 
                 <form onSubmit={handleMerge} className="upload-form">
                     <div className="section-card">
@@ -119,19 +144,48 @@ const MergeVideos = () => {
 
                             <div className="form-field">
                                 <label className="field-label">Sıfırdan Video Dosyaları Ekle (.mp4)</label>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="video/mp4,video/x-m4v,video/*"
-                                    onChange={handleFileChange}
-                                    className="file-input"
-                                />
+
+                                <div
+                                    className={`drag-drop-zone ${isDragging ? 'dragging' : ''}`}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    onClick={() => fileInputRef.current.click()}
+                                >
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="video/mp4,video/x-m4v,video/*"
+                                        onChange={handleFileChange}
+                                        ref={fileInputRef}
+                                        style={{ display: 'none' }}
+                                    />
+
+                                    <div className="drag-content">
+                                        <div className="drag-icon">📁</div>
+                                        <div>
+                                            <span className="drag-instructions">Dosyalarınızı buraya sürükleyin</span> veya
+                                            <span style={{ color: '#10b981', marginLeft: '4px', textDecoration: 'underline' }}>göz atın</span>
+                                        </div>
+                                        <div className="muted-text file-limits-text">
+                                            MP4, MOV (Toplam Maks 1GB)
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {newFiles.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                                    <div className="video-list-container">
                                         {newFiles.map((file, index) => (
-                                            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--foreground)' }}>📄 {file.name}</span>
-                                                <button type="button" onClick={() => removeNewFile(index)} className="table-button danger" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Sil</button>
+                                            <div key={index} className="new-file-item">
+                                                <span className="video-date">📄 {file.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeNewFile(index)}
+                                                    className="table-button danger"
+                                                    style={{ padding: '4px 8px' }}
+                                                >
+                                                    Sil
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
@@ -142,34 +196,24 @@ const MergeVideos = () => {
                                 <label className="field-label">Veya Mevcut Videolarınızdan Seçin ({selectedVideoIds.length} Seçildi)</label>
 
                                 {availableVideos.length === 0 ? (
-                                    <div className="alert" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#a1a1aa', border: 'none', padding: '10px', fontSize: '0.9rem' }}>
+                                    <div className="alert page-description" style={{ border: 'none', padding: '10px' }}>
                                         Daha önce yüklenmiş videonuz bulunmuyor.
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '5px' }}>
+                                    <div className="video-list-container">
                                         {availableVideos.map((video) => (
                                             <label
                                                 key={video.id}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '12px',
-                                                    padding: '12px',
-                                                    backgroundColor: selectedVideoIds.includes(video.id) ? 'rgba(16, 185, 129, 0.1)' : 'var(--card-bg)',
-                                                    border: `1px solid ${selectedVideoIds.includes(video.id) ? '#10b981' : 'var(--border)'}`,
-                                                    borderRadius: '8px',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                className={`video-list-item ${selectedVideoIds.includes(video.id) ? 'selected' : ''}`}
                                             >
                                                 <input
                                                     type="checkbox"
+                                                    className="checkbox-input"
                                                     checked={selectedVideoIds.includes(video.id)}
                                                     onChange={() => handleCheckboxChange(video.id)}
-                                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                                 />
-                                                <span style={{ color: 'var(--foreground)', fontWeight: '500' }}>{video.title}</span>
-                                                <span className="muted-text" style={{ fontSize: '0.85rem', marginLeft: 'auto' }}>
+                                                <span className="video-title">{video.title}</span>
+                                                <span className="muted-text video-date">
                                                     {new Date(video.createdAt).toLocaleDateString('tr-TR')}
                                                 </span>
                                             </label>
