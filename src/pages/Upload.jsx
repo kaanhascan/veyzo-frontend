@@ -83,9 +83,6 @@ const Upload = () => {
             <div className="upload-shell">
                 <div className="upload-header">
                     <h2 className="upload-title">Yeni Video Yükle</h2>
-                    <button type="button" className="secondary-button" onClick={() => navigate('/dashboard')}>
-                        ← Geri Dön
-                    </button>
                 </div>
 
                 {error && <div className="alert" style={{ marginTop: '0', marginBottom: '20px' }}>{error}</div>}
