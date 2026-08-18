@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Layout from './components/Layout';
 import ExtractAudio from './pages/ExtractAudio';
+import MergeVideos from './pages/MergeVideos';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/upload" element={<Upload />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/extract-audio" element={<ExtractAudio />} />
+          <Route path="/merge-videos" element={<MergeVideos />} />
         </Route>
       </Routes>
     </BrowserRouter>
