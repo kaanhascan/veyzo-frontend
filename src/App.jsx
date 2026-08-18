@@ -6,6 +6,7 @@ import Upload from './pages/Upload';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Layout from './components/Layout';
+import ExtractAudio from './pages/ExtractAudio';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/upload" element={<Upload />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/extract-audio" element={<ExtractAudio />} />
         </Route>
       </Routes>
     </BrowserRouter>
