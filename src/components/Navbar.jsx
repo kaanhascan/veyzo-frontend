@@ -17,6 +17,7 @@ const Navbar = () => {
 
             <div className="nav-links">
                 <Link to="/dashboard" className="nav-link">Dashboard</Link>
+                <Link to="/extract-gif" className="nav-link">GIF Ayrıştır</Link>
                 <Link to="/extract-audio" className="nav-link">Sesi Ayrıştır</Link>
                 <Link to="/merge-videos" className="nav-link">Videoları Birleştir</Link>
                 <Link to="/upload" className="nav-link">Toplu Yükle</Link>
