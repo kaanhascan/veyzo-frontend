@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Layout from './components/Layout';
 import ExtractAudio from './pages/ExtractAudio';
 import MergeVideos from './pages/MergeVideos';
+import ExtractGif from './pages/ExtractGif';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/extract-audio" element={<ExtractAudio />} />
           <Route path="/merge-videos" element={<MergeVideos />} />
+          <Route path="/extract-gif" element={<ExtractGif />} />
         </Route>
       </Routes>
     </BrowserRouter>
