@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import ExtractAudio from './pages/ExtractAudio';
 import MergeVideos from './pages/MergeVideos';
 import ExtractGif from './pages/ExtractGif';
+import CompressVideo from './pages/CompressVideo';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/extract-audio" element={<ExtractAudio />} />
           <Route path="/merge-videos" element={<MergeVideos />} />
           <Route path="/extract-gif" element={<ExtractGif />} />
+          <Route path="/compress-video" element={<CompressVideo />} />
         </Route>
       </Routes>
     </BrowserRouter>
