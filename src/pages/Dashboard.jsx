@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
     const [videos, setVideos] = useState([]);
@@ -23,15 +24,19 @@ const Dashboard = () => {
         } catch (err) {
             if (isInitialLoad) { setError('Videolar yüklenirken bir sorun oluştu.'); setLoading(false); }
             if (err.response && err.response.status === 401) {
-                localStorage.removeItem('jwt_token');
                 navigate('/login');
             }
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('jwt_token');
-        navigate('/login');
+    const handleLogout = async () => {
+        try {
+            await api.post('/users/logout');
+        } catch (error) {
+            console.error("Çıkış yaparken bir hata oluştu", error);
+        } finally {
+            navigate('/login');
+        }
     };
 
     const handleDelete = async (id, isBatch, items) => {
@@ -85,7 +90,7 @@ const Dashboard = () => {
 
         } catch (error) {
             console.error("İndirme sırasında bir hata oluştu:", error);
-            alert("Dosya indirilemedi!");
+            toast.error("Dosya indirilemedi!");
         }
     };
 
