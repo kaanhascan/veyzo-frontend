@@ -101,7 +101,7 @@ const CompressVideo = () => {
                                         ) : (
                                             <div>
                                                 <span className="drag-instructions">Dosyanızı buraya sürükleyin</span> veya
-                                                <span className="browse-text">göz atın</span>
+                                                <span style={{ color: '#10b981', marginLeft: '4px', textDecoration: 'underline' }}>göz atın</span>
                                             </div>
                                         )}
                                         <div className="muted-text file-limits-text">Maksimum sıkıştırma kalitesiyle işlenecektir.</div>
