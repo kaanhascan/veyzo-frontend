@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 
+
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -12,20 +13,18 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
+        setError('');
 
         try {
-            const response = await api.post('/users/login', {
-                email: email,
-                password: password
+            await api.post('/users/login', {
+                email,
+                password
             });
-
-            const token = response.data.token;
-            localStorage.setItem('jwt_token', token);
             navigate('/dashboard');
         } catch (err) {
-            setError('Giriş başarısız. Lütfen e-posta ve şifrenizi kontrol edin.');
+            setError(err.response?.data?.message || "Giriş başarısız oldu.");
+        } finally {
             setLoading(false);
         }
     };
