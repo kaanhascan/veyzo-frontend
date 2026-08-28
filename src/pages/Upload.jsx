@@ -40,6 +40,16 @@ const Upload = () => {
         }
     };
 
+    const calculateDurationInSeconds = (start, end) => {
+        const timeToSeconds = (timeStr) => {
+            const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+            return (hours * 3600) + (minutes * 60) + seconds;
+        };
+
+        const duration = timeToSeconds(end) - timeToSeconds(start);
+        return duration > 0 ? duration : 1;
+    };
+
     const handleUpload = async (e) => {
         e.preventDefault();
 
@@ -56,6 +66,7 @@ const Upload = () => {
         formData.append('title', title);
         formData.append('startTime', startTime);
         formData.append('endTime', endTime);
+        formData.append('duration', calculateDurationInSeconds(startTime, endTime).toString());
 
         try {
             await api.post('/videos/upload', formData, {
