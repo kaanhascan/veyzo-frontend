@@ -31,7 +31,7 @@ const Home = () => {
                 <div className="feature-grid">
                     <div className="feature-card">
                         <div className="feature-icon">🚀</div>
-                        <h3 className="feature-title">Toplu İşlem (Batch)</h3>
+                        <h3 className="feature-title">Toplu İşlem</h3>
                         <p className="muted-text">Aynı anda birden fazla videoyu seçin ve tek bir kesme şablonunu hepsine anında uygulayın.</p>
                     </div>
 
