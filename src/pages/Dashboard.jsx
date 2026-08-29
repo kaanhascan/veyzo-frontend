@@ -140,6 +140,17 @@ const Dashboard = () => {
         return groups;
     };
 
+    const getOperationDetails = (type) => {
+        switch (type) {
+            case 'TRIM': return { label: 'Kırpma', class: 'op-trim' };
+            case 'COMPRESS': return { label: 'Sıkıştırma', class: 'op-compress' };
+            case 'AUDIO': return { label: 'Ses Ayrıştırma', class: 'op-audio' };
+            case 'MERGE': return { label: 'Birleştirme', class: 'op-merge' };
+            case 'GIF': return { label: 'GIF', class: 'op-gif' };
+            default: return { label: 'İşlem', class: '' };
+        }
+    };
+
     const getStatusClass = (status) => {
         if (status === 'COMPLETED') return 'status-completed';
         if (status === 'FAILED') return 'status-failed';
@@ -177,6 +188,7 @@ const Dashboard = () => {
                                         <th>İsim / Klasör</th>
                                         <th>Durum</th>
                                         <th>Tarih</th>
+                                        <th>İşlem Türü</th>
                                         <th style={{ textAlign: 'right' }}>İşlemler</th>
                                     </tr>
                                 </thead>
@@ -195,6 +207,15 @@ const Dashboard = () => {
                                             </td>
                                             <td style={{ color: 'rgba(255,255,255,0.7)' }}>
                                                 {new Date(group.createdAt).toLocaleDateString('tr-TR')}
+                                            </td>
+                                            <td>
+                                                {!group.isBatch && group.items[0]?.operationType ? (
+                                                    <span className={`operation-badge ${getOperationDetails(group.items[0].operationType).class}`}>
+                                                        {getOperationDetails(group.items[0].operationType).label}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: 'rgba(255,255,255,0.2)' }}>-</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <div className="table-actions">
