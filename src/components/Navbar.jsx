@@ -1,13 +1,18 @@
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../api/axiosConfig';
 
 const Navbar = () => {
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        localStorage.removeItem('jwt_token');
-        navigate('/login');
+    const handleLogout = async () => {
+        try {
+            await api.post('/users/logout');
+        } catch (error) {
+            console.error("Çıkış yaparken bir hata oluştu", error);
+        } finally {
+            navigate('/login');
+        }
     };
-
     return (
         <nav className="navbar">
             <Link to="/dashboard" className="nav-brand">
