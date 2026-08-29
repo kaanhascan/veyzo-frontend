@@ -71,7 +71,7 @@ const CompressVideo = () => {
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     required
-                                    placeholder="Örn: Sunum Videosu (Küçük)"
+                                    placeholder="Örn: Sunum Videosu - Küçültülmüş"
                                     className="text-input"
                                 />
                             </div>
