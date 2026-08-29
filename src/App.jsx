@@ -10,6 +10,7 @@ import ExtractAudio from './pages/ExtractAudio';
 import MergeVideos from './pages/MergeVideos';
 import ExtractGif from './pages/ExtractGif';
 import CompressVideo from './pages/CompressVideo';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -28,6 +29,8 @@ function App() {
           <Route path="/extract-gif" element={<ExtractGif />} />
           <Route path="/compress-video" element={<CompressVideo />} />
         </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

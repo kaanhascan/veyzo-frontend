@@ -763,5 +763,17 @@ input[type='range'] {
     border-radius: 6px;
   }
 
+  .error-code {
+    font-family: var(--display-font);
+    font-size: clamp(4rem, 10vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.3));
+  }
+
 
 }
