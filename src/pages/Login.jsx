@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 
 const Login = () => {
@@ -21,10 +22,17 @@ const Login = () => {
                 email,
                 password
             });
-            navigate('/dashboard');
+
+            toast.success('Giriş başarılı! Yönlendiriliyorsunuz...', {
+                style: { background: '#1A1A24', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }
+            });
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1500);
+
         } catch (err) {
-            setError(err.response?.data?.message || "Giriş başarısız oldu.");
-        } finally {
+            setError("E-posta veya şifre hatalı.");
             setLoading(false);
         }
     };
@@ -38,7 +46,11 @@ const Login = () => {
                     <p className="auth-subtitle">Video düzenleme ve kırpma işleminize başlamak için giriş yapın.</p>
                 </div>
 
-                {error && <div className="alert">{error}</div>}
+                {error && (
+                    <div className="alert">
+                        {typeof error === 'string' ? error : "E-posta veya şifre hatalı."}
+                    </div>
+                )}
 
                 <form onSubmit={handleLogin} className="auth-form">
                     <div className="form-field">
