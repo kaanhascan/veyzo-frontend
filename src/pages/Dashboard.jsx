@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -7,6 +7,7 @@ const Dashboard = () => {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const prevVideosRef = useRef([]);
 
     const navigate = useNavigate();
 
@@ -16,11 +17,53 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const getOperationDetails = (type) => {
+        switch (type) {
+            case 'TRIM': return { label: 'Kırpma', class: 'op-trim' };
+            case 'COMPRESS': return { label: 'Sıkıştırma', class: 'op-compress' };
+            case 'AUDIO': return { label: 'Ses Ayrıştırma', class: 'op-audio' };
+            case 'MERGE': return { label: 'Birleştirme', class: 'op-merge' };
+            case 'GIF': return { label: 'GIF', class: 'op-gif' };
+            default: return { label: 'İşlem', class: '' };
+        }
+    };
+
     const fetchMyVideos = async (isInitialLoad = false) => {
         try {
             const response = await api.get('/videos/my-videos');
-            setVideos(response.data);
+            const newVideos = response.data;
+
+            if (!isInitialLoad) {
+                newVideos.forEach(newVideo => {
+                    if (newVideo.status === 'COMPLETED') {
+                        const oldVideo = prevVideosRef.current.find(v => v.id === newVideo.id);
+
+                        if (oldVideo && oldVideo.status !== 'COMPLETED') {
+                            const opDetail = getOperationDetails(newVideo.operationType);
+
+                            toast.success(`"${newVideo.title}" dosyasının ${opDetail.label} işlemi tamamlandı!`, {
+                                position: 'top-right',
+                                duration: 2500,
+                                style: {
+                                    background: '#1A1A24',
+                                    color: '#FAFAFA',
+                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+                                },
+                                iconTheme: {
+                                    primary: '#10b981',
+                                    secondary: '#1A1A24',
+                                },
+                            });
+                        }
+                    }
+                });
+            }
+            prevVideosRef.current = newVideos;
+
+            setVideos(newVideos);
             if (isInitialLoad) setLoading(false);
+
         } catch (err) {
             if (isInitialLoad) { setError('Videolar yüklenirken bir sorun oluştu.'); setLoading(false); }
             if (err.response && err.response.status === 401) {
@@ -32,8 +75,12 @@ const Dashboard = () => {
     const handleLogout = async () => {
         try {
             await api.post('/users/logout');
+            toast.success('Başarıyla çıkış yapıldı.', {
+                style: { background: '#1A1A24', color: '#FAFAFA', border: '1px solid rgba(255,255,255,0.1)' }
+            });
         } catch (error) {
             console.error("Çıkış yaparken bir hata oluştu", error);
+            toast.error('Çıkış işlemi başarısız oldu.');
         } finally {
             navigate('/login');
         }
@@ -50,16 +97,22 @@ const Dashboard = () => {
             if (isBatch) {
                 for (let item of items) { await api.delete(`/videos/${item.id}`); }
                 setVideos((current) => current.filter((v) => v.batchId !== id));
+                toast.success('Klasör ve içindeki videolar silindi.');
             } else {
                 await api.delete(`/videos/${id}`);
                 setVideos((current) => current.filter((v) => v.id !== id));
+                toast.success('Video başarıyla silindi.');
             }
         } catch (err) {
-            alert('Silme işlemi sırasında hata oluştu.');
+            toast.error('Silme işlemi sırasında bir hata oluştu.');
         }
     };
 
     const handleDownload = async (video) => {
+        const toastId = toast.loading('Dosya hazırlanıyor, lütfen bekleyin...', {
+            style: { background: '#1A1A24', color: '#FAFAFA', border: '1px solid rgba(245, 158, 11, 0.3)' }
+        });
+
         try {
             const response = await api.get(`/videos/download/${video.id}`, {
                 responseType: 'blob',
@@ -70,7 +123,6 @@ const Dashboard = () => {
             link.href = url;
 
             let extension = ".mp4";
-
             if (video.processedFileName && video.processedFileName.includes('.')) {
                 extension = video.processedFileName.substring(video.processedFileName.lastIndexOf('.'));
             } else if (video.originalFileName && video.originalFileName.includes('.')) {
@@ -80,21 +132,25 @@ const Dashboard = () => {
             const safeTitle = video.title ? video.title.replace(/[^a-zA-Z0-9]/g, "_") : "veyzo_export";
             const downloadName = safeTitle + extension;
 
-            console.log("DOSYA ŞU İSİMLE İNDİRİLECEK:", downloadName);
-
             link.setAttribute('download', downloadName);
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
 
+            toast.success('İndirme başlıyor!', { id: toastId });
+
         } catch (error) {
             console.error("İndirme sırasında bir hata oluştu:", error);
-            toast.error("Dosya indirilemedi!");
+            toast.error("Dosya indirilemedi!", { id: toastId });
         }
     };
 
     const handleZipDownload = async (batchId, title) => {
+        const toastId = toast.loading('ZIP dosyası oluşturuluyor...', {
+            style: { background: '#1A1A24', color: '#FAFAFA', border: '1px solid rgba(245, 158, 11, 0.3)' }
+        });
+
         try {
             const response = await api.get(`/videos/download/batch/${batchId}`, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -104,10 +160,13 @@ const Dashboard = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
+
+            toast.success('ZIP dosyası indiriliyor!', { id: toastId });
         } catch (err) {
-            alert('ZIP dosyası oluşturulurken hata oluştu. Videoların tamamlandığından emin olun.');
+            toast.error('Hata! Videoların tamamlandığından emin olun.', { id: toastId });
         }
     };
+
     const getGroupedVideos = () => {
         const groups = [];
         const groupMap = {};
@@ -140,16 +199,7 @@ const Dashboard = () => {
         return groups;
     };
 
-    const getOperationDetails = (type) => {
-        switch (type) {
-            case 'TRIM': return { label: 'Kırpma', class: 'op-trim' };
-            case 'COMPRESS': return { label: 'Sıkıştırma', class: 'op-compress' };
-            case 'AUDIO': return { label: 'Ses Ayrıştırma', class: 'op-audio' };
-            case 'MERGE': return { label: 'Birleştirme', class: 'op-merge' };
-            case 'GIF': return { label: 'GIF', class: 'op-gif' };
-            default: return { label: 'İşlem', class: '' };
-        }
-    };
+
 
     const getStatusClass = (status) => {
         if (status === 'COMPLETED') return 'status-completed';
