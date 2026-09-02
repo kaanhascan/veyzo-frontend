@@ -11,10 +11,12 @@ import MergeVideos from './pages/MergeVideos';
 import ExtractGif from './pages/ExtractGif';
 import CompressVideo from './pages/CompressVideo';
 import NotFound from './pages/NotFound';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
