@@ -6,13 +6,22 @@ const api = axios.create({
     withCredentials: true,
 });
 
-
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response) {
             const status = error.response.status;
-            const backendMessage = error.response.data?.message || typeof error.response.data === 'string' ? error.response.data : "Bir hata oluştu.";
+
+            let backendMessage = "Bir hata oluştu.";
+            if (error.response.data) {
+                if (typeof error.response.data === 'string') {
+                    backendMessage = error.response.data;
+                } else if (typeof error.response.data.message === 'string') {
+                    backendMessage = error.response.data.message;
+                } else if (typeof error.response.data.error === 'string') {
+                    backendMessage = error.response.data.error;
+                }
+            }
 
             if (status === 401) {
                 if (window.location.pathname !== '/login') {
@@ -27,14 +36,17 @@ api.interceptors.response.use(
                 toast.error("Yüklediğiniz dosya çok büyük!");
             }
             else if (status === 400 || status >= 500) {
-                toast.error(backendMessage);
-            }
-            else if (error.request) {
-                toast.error("Sunucuya bağlanılamadı. Lütfen internetinizi kontrol edin.");
-            }
+                const finalMessage = backendMessage === "Bad credentials"
+                    ? "E-posta veya şifre hatalı."
+                    : String(backendMessage);
 
-            return Promise.reject(error);
+                toast.error(finalMessage);
+            }
+        } else if (error.request) {
+            toast.error("Sunucuya bağlanılamadı. Lütfen internetinizi kontrol edin.");
         }
+
+        return Promise.reject(error);
     }
 );
 
