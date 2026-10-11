@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 
 const Upload = () => {
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('00:00:00');
     const [endTime, setEndTime] = useState('00:00:10');
@@ -53,32 +53,38 @@ const Upload = () => {
     const handleUpload = async (e) => {
         e.preventDefault();
 
-        if (!file) {
-            setError("Lütfen işlenecek bir video dosyası seçin.");
+        if (files.length === 0) {
+            setError("Lütfen en az bir video seçin.");
             return;
         }
 
         setError('');
         setLoading(true);
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('title', title);
-        formData.append('startTime', startTime);
-        formData.append('endTime', endTime);
-        formData.append('duration', calculateDurationInSeconds(startTime, endTime).toString());
+        const batchId = files.length > 1 ? crypto.randomUUID() : '';
 
         try {
-            await api.post('/videos/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            const uploadPromises = files.map(file => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('title', title);
+                formData.append('startTime', startTime);
+                formData.append('endTime', endTime);
+
+                formData.append('duration', calculateDurationInSeconds(startTime, endTime).toString());
+
+                if (batchId) formData.append('batchId', batchId);
+
+                return api.post('/videos/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             });
+
+            await Promise.all(uploadPromises);
+
             navigate('/dashboard');
         } catch (err) {
-            console.error("Yükleme hatası:", err);
-            const errorMessage = typeof err.response?.data === 'string'
-                ? err.response.data
-                : "Dosya gönderilirken bir hata oluştu. Dosya boyutunu kontrol edin.";
-            setError(errorMessage);
+            setError("Dosyalar gönderilirken bir hata oluştu.");
             setLoading(false);
         }
     };
@@ -124,10 +130,11 @@ const Upload = () => {
                                 >
                                     <input
                                         type="file"
+                                        multiple
                                         accept="video/mp4,video/x-m4v,video/*"
                                         onChange={(e) => {
-                                            if (e.target.files[0]) {
-                                                setFile(e.target.files[0]);
+                                            if (e.target.files.length > 0) {
+                                                setFiles(Array.from(e.target.files));
                                                 setError('');
                                             }
                                         }}
@@ -137,9 +144,12 @@ const Upload = () => {
 
                                     <div className="drag-content">
                                         <div className="drag-icon">📁</div>
-                                        {file ? (
+
+                                        {files.length > 0 ? (
                                             <div className="file-success-text">
-                                                Seçilen Dosya: {file.name}
+                                                {files.length === 1
+                                                    ? `Seçilen Dosya: ${files[0].name}`
+                                                    : `${files.length} adet dosya seçildi.`}
                                             </div>
                                         ) : (
                                             <div>
@@ -147,6 +157,7 @@ const Upload = () => {
                                                 <span style={{ color: '#10b981', marginLeft: '4px', textDecoration: 'underline' }}>göz atın</span>
                                             </div>
                                         )}
+
                                         <div className="muted-text file-limits-text">
                                             MP4, MOV (Maks 250 MB)
                                         </div>
@@ -184,7 +195,7 @@ const Upload = () => {
 
                     <button
                         type="submit"
-                        disabled={loading || !file}
+                        disabled={loading || files.length === 0}
                         className="upload-button"
                     >
                         {loading ? 'İşleniyor (Bekleyin)...' : 'Videoyu Kırp'}
