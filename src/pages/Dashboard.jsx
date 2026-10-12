@@ -146,23 +146,34 @@ const Dashboard = () => {
         }
     };
 
-    const handleZipDownload = async (batchId, title) => {
-        const toastId = toast.loading('ZIP dosyası oluşturuluyor...', {
+    const handleZipDownload = async (batchId, title = "veyzo_export") => {
+        const toastId = toast.loading('ZIP dosyası oluşturuluyor, lütfen bekleyin...', {
             style: { background: '#1A1A24', color: '#FAFAFA', border: '1px solid rgba(245, 158, 11, 0.3)' }
         });
 
         try {
-            const response = await api.get(`/videos/download/batch/${batchId}`, { responseType: 'blob' });
+            const response = await api.get(`/videos/download/batch/${batchId}`, {
+                responseType: 'blob'
+            });
+
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${title.split(' (')[0]}_veyzo_klasor.zip`);
+
+            const baseTitle = title && typeof title === 'string' ? title.split(' (')[0] : "veyzo_klasor";
+            const safeTitle = baseTitle.replace(/[^a-zA-Z0-9]/g, "_");
+
+            link.setAttribute('download', `${safeTitle}_${batchId.substring(0, 5)}.zip`);
+
             document.body.appendChild(link);
             link.click();
             link.remove();
 
+            window.URL.revokeObjectURL(url);
+
             toast.success('ZIP dosyası indiriliyor!', { id: toastId });
         } catch (err) {
+            console.error("ZIP indirme hatası:", err);
             toast.error('Hata! Videoların tamamlandığından emin olun.', { id: toastId });
         }
     };
@@ -259,12 +270,14 @@ const Dashboard = () => {
                                                 {new Date(group.createdAt).toLocaleDateString('tr-TR')}
                                             </td>
                                             <td>
-                                                {!group.isBatch && group.items[0]?.operationType ? (
+                                                {group.items[0]?.operationType ? (
                                                     <span className={`operation-badge ${getOperationDetails(group.items[0].operationType).class}`}>
                                                         {getOperationDetails(group.items[0].operationType).label}
                                                     </span>
                                                 ) : (
-                                                    <span style={{ color: 'rgba(255,255,255,0.2)' }}>-</span>
+                                                    <span className="operation-badge" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                                        İşlem
+                                                    </span>
                                                 )}
                                             </td>
                                             <td>
