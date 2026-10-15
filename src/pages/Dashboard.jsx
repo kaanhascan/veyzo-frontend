@@ -129,7 +129,9 @@ const Dashboard = () => {
                 extension = video.originalFileName.substring(video.originalFileName.lastIndexOf('.'));
             }
 
-            const safeTitle = video.title ? video.title.replace(/[^a-zA-Z0-9]/g, "_") : "veyzo_export";
+            const safeTitle = video.title
+                ? video.title.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_+|_+$/g, "") || "veyzo_export"
+                : "veyzo_export";
             const downloadName = safeTitle + extension;
 
             link.setAttribute('download', downloadName);
