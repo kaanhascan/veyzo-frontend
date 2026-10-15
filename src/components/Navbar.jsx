@@ -1,8 +1,20 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
+
+const links = [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/compress-video', label: 'Videoyu Sıkıştır' },
+    { to: '/extract-gif', label: 'GIF Ayrıştır' },
+    { to: '/extract-audio', label: 'Sesi Ayrıştır' },
+    { to: '/merge-videos', label: 'Videoları Birleştir' },
+    { to: '/upload', label: 'Toplu Yükle' },
+    { to: '/profile', label: 'Profil' },
+];
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const [open, setOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -10,25 +22,39 @@ const Navbar = () => {
         } catch (error) {
             console.error("Çıkış yaparken bir hata oluştu", error);
         } finally {
+            setOpen(false);
             navigate('/login');
         }
     };
+
     return (
         <nav className="navbar">
-            <Link to="/dashboard" className="nav-brand">
+            <Link to="/dashboard" className="nav-brand" onClick={() => setOpen(false)}>
                 <div className="brand-badge">V</div>
                 Veyzo
             </Link>
 
-            <div className="nav-links">
-                <Link to="/dashboard" className="nav-link">Dashboard</Link>
-                <Link to="/compress-video" className="nav-link">Videoyu Sıkıştır</Link>
-                <Link to="/extract-gif" className="nav-link">GIF Ayrıştır</Link>
-                <Link to="/extract-audio" className="nav-link">Sesi Ayrıştır</Link>
-                <Link to="/merge-videos" className="nav-link">Videoları Birleştir</Link>
-                <Link to="/upload" className="nav-link">Toplu Yükle</Link>
-                <Link to="/profile" className="nav-link">Profil</Link>
+            <button
+                type="button"
+                className="nav-toggle"
+                aria-label="Menüyü aç/kapat"
+                aria-expanded={open}
+                onClick={() => setOpen((o) => !o)}
+            >
+                {open ? '✕' : '☰'}
+            </button>
 
+            <div className={`nav-links ${open ? 'open' : ''}`}>
+                {links.map((l) => (
+                    <NavLink
+                        key={l.to}
+                        to={l.to}
+                        className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                        onClick={() => setOpen(false)}
+                    >
+                        {l.label}
+                    </NavLink>
+                ))}
 
                 <button
                     onClick={handleLogout}
