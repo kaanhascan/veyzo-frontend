@@ -29,25 +29,34 @@ const Upload = () => {
         e.preventDefault();
         setIsDragging(false);
 
-        const droppedFiles = e.dataTransfer.files;
-        if (droppedFiles && droppedFiles.length > 0) {
-            if (droppedFiles[0].type.startsWith('video/')) {
-                setFile(droppedFiles[0]);
-                setError('');
-            } else {
-                setError("Lütfen sadece geçerli bir video dosyası sürükleyin.");
-            }
+        const droppedFiles = Array.from(e.dataTransfer.files || []);
+        const videoFiles = droppedFiles.filter((file) => file.type.startsWith('video/'));
+
+        if (videoFiles.length > 0) {
+            setFiles(videoFiles);
+            setError('');
+        } else {
+            setError("Lütfen sadece geçerli bir video dosyası sürükleyin.");
         }
     };
 
-    const calculateDurationInSeconds = (start, end) => {
-        const timeToSeconds = (timeStr) => {
-            const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-            return (hours * 3600) + (minutes * 60) + seconds;
-        };
+    const parseTimeToSeconds = (timeStr) => {
+        if (!timeStr || typeof timeStr !== 'string') return NaN;
+        const trimmed = timeStr.trim();
+        if (!/^(\d+(\.\d+)?|(\d{1,2}:)?\d{1,2}:\d{1,2}(\.\d+)?)$/.test(trimmed)) {
+            return NaN;
+        }
 
-        const duration = timeToSeconds(end) - timeToSeconds(start);
-        return duration > 0 ? duration : 1;
+        const parts = trimmed.split(':').map(Number);
+        if (parts.some(isNaN)) return NaN;
+
+        if (parts.length === 3) {
+            return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+        }
+        if (parts.length === 2) {
+            return (parts[0] * 60) + parts[1];
+        }
+        return parts[0];
     };
 
     const handleUpload = async (e) => {
@@ -55,6 +64,20 @@ const Upload = () => {
 
         if (files.length === 0) {
             setError("Lütfen en az bir video seçin.");
+            return;
+        }
+
+        const startSeconds = parseTimeToSeconds(startTime);
+        const endSeconds = parseTimeToSeconds(endTime);
+
+        if (isNaN(startSeconds) || isNaN(endSeconds)) {
+            setError("Lütfen geçerli bir zaman formatı girin (Örn: 00:00:10).");
+            return;
+        }
+
+        const duration = endSeconds - startSeconds;
+        if (duration <= 0) {
+            setError("Bitiş zamanı, başlangıç zamanından büyük olmalıdır.");
             return;
         }
 
@@ -68,10 +91,10 @@ const Upload = () => {
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('title', title);
-                formData.append('startTime', startTime);
-                formData.append('endTime', endTime);
+                formData.append('startTime', startTime.trim());
+                formData.append('endTime', endTime.trim());
 
-                formData.append('duration', calculateDurationInSeconds(startTime, endTime).toString());
+                formData.append('duration', duration.toString());
 
                 if (batchId) formData.append('batchId', batchId);
 
