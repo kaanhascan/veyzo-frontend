@@ -43,18 +43,22 @@ const Upload = () => {
     const parseTimeToSeconds = (timeStr) => {
         if (!timeStr || typeof timeStr !== 'string') return NaN;
         const trimmed = timeStr.trim();
-        if (!/^(\d+(\.\d+)?|(\d{1,2}:)?\d{1,2}:\d{1,2}(\.\d+)?)$/.test(trimmed)) {
+        if (trimmed.includes('-') || !/^(\d+(\.\d+)?|(\d{1,2}:)?\d{1,2}:\d{1,2}(\.\d+)?)$/.test(trimmed)) {
             return NaN;
         }
 
         const parts = trimmed.split(':').map(Number);
-        if (parts.some(isNaN)) return NaN;
+        if (parts.some((n) => isNaN(n) || n < 0)) return NaN;
 
         if (parts.length === 3) {
-            return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+            const [hours, minutes, seconds] = parts;
+            if (minutes >= 60 || seconds >= 60) return NaN;
+            return (hours * 3600) + (minutes * 60) + seconds;
         }
         if (parts.length === 2) {
-            return (parts[0] * 60) + parts[1];
+            const [minutes, seconds] = parts;
+            if (seconds >= 60) return NaN;
+            return (minutes * 60) + seconds;
         }
         return parts[0];
     };
