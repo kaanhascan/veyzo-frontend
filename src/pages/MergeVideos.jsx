@@ -106,9 +106,10 @@ const MergeVideos = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error("Birleştirme hatası:", err);
-            const errorMessage = typeof err.response?.data === 'string'
-                ? err.response.data
-                : "Birleştirme işlemi başlatılamadı.";
+            const errorMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string'
+                    ? err.response.data
+                    : "Birleştirme işlemi başlatılamadı.");
             setError(errorMessage);
             setLoading(false);
         }

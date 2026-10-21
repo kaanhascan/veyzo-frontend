@@ -2,15 +2,24 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
     withCredentials: true,
 });
 
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         if (error.response) {
             const status = error.response.status;
+
+            if (error.response.data instanceof Blob) {
+                try {
+                    const text = await error.response.data.text();
+                    error.response.data = JSON.parse(text);
+                } catch {
+                    // Blob JSON degilse oldugu gibi birak
+                }
+            }
 
             let backendMessage = "Bir hata oluştu.";
             if (error.response.data) {
@@ -30,12 +39,12 @@ api.interceptors.response.use(
                 }
             }
             else if (status === 403) {
-                toast.error("Bu işlemi yapmaya yetkiniz yok.");
+                toast.error(backendMessage !== "Bir hata oluştu." ? backendMessage : "Bu işlemi yapmaya yetkiniz yok.");
             }
             else if (status === 413) {
-                toast.error("Yüklediğiniz dosya çok büyük!");
+                toast.error(backendMessage !== "Bir hata oluştu." ? backendMessage : "Yüklediğiniz dosya çok büyük!");
             }
-            else if (status === 400 || status >= 500) {
+            else if (status === 400 || status === 404 || status === 409 || status >= 500) {
                 const finalMessage = backendMessage === "Bad credentials"
                     ? "E-posta veya şifre hatalı."
                     : String(backendMessage);

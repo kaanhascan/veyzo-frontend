@@ -59,9 +59,10 @@ const ExtractGif = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error("Yükleme hatası:", err);
-            const errorMessage = typeof err.response?.data === 'string'
-                ? err.response.data
-                : "Dosya gönderilirken bir hata oluştu.";
+            const errorMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string'
+                    ? err.response.data
+                    : "Dosya gönderilirken bir hata oluştu.");
             setError(errorMessage);
             setLoading(false);
         }

@@ -111,7 +111,9 @@ const Upload = () => {
 
             navigate('/dashboard');
         } catch (err) {
-            setError("Dosyalar gönderilirken bir hata oluştu.");
+            const backendMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string' ? err.response.data : null);
+            setError(backendMessage || "Dosyalar gönderilirken bir hata oluştu.");
             setLoading(false);
         }
     };

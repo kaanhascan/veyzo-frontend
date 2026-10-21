@@ -43,7 +43,9 @@ const CompressVideo = () => {
             });
             navigate('/dashboard');
         } catch (err) {
-            setError(typeof err.response?.data === 'string' ? err.response.data : "Dosya gönderilemedi.");
+            const errorMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string' ? err.response.data : "Dosya gönderilemedi.");
+            setError(errorMessage);
             setLoading(false);
         }
     };

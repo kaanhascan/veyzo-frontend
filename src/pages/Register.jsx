@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -23,10 +24,14 @@ const Register = () => {
                 password: password
             });
 
-            alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+            toast.success('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', {
+                style: { background: '#1A1A24', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }
+            });
             navigate('/login');
         } catch (err) {
-            setError('Kayıt işlemi başarısız oldu. Bu e-posta zaten kullanılıyor olabilir.');
+            const backendMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string' ? err.response.data : null);
+            setError(backendMessage || 'Kayıt işlemi başarısız oldu. Lütfen bilgilerinizi kontrol edin.');
             setLoading(false);
         }
     };

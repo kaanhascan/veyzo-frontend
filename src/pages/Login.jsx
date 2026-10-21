@@ -32,7 +32,13 @@ const Login = () => {
             }, 1500);
 
         } catch (err) {
-            setError("E-posta veya şifre hatalı.");
+            const backendMessage = err.response?.data?.message
+                || (typeof err.response?.data === 'string' ? err.response.data : null);
+            setError(
+                backendMessage && backendMessage !== 'Bad credentials'
+                    ? backendMessage
+                    : 'E-posta veya şifre hatalı.'
+            );
             setLoading(false);
         }
     };
